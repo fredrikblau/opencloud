@@ -49,7 +49,7 @@ require (
 	github.com/jellydator/ttlcache/v3 v3.4.1
 	github.com/jinzhu/now v1.1.5
 	github.com/justinas/alice v1.2.0
-	github.com/kovidgoyal/imaging v1.8.22
+	github.com/kovidgoyal/imaging v1.8.23
 	github.com/leonelquinteros/gotext v1.7.3-0.20260422134830-b012b4ccae69
 	github.com/libregraph/idm v0.5.0
 	github.com/libregraph/lico v0.67.0
@@ -72,7 +72,7 @@ require (
 	github.com/prometheus/client_golang v1.24.1
 	github.com/r3labs/sse/v2 v2.10.0
 	github.com/riandyrn/otelchi v0.12.3
-	github.com/rogpeppe/go-internal v1.15.0
+	github.com/rogpeppe/go-internal v1.16.0
 	github.com/rs/cors v1.11.1
 	github.com/rs/zerolog v1.35.1
 	github.com/shamaton/msgpack/v2 v2.4.1

@@ -730,8 +730,8 @@ github.com/kovidgoyal/go-parallel v1.1.1 h1:1OzpNjtrUkBPq3UaqrnvOoB2F9RttSt811ui
 github.com/kovidgoyal/go-parallel v1.1.1/go.mod h1:BJNIbe6+hxyFWv7n6oEDPj3PA5qSw5OCtf0hcVxWJiw=
 github.com/kovidgoyal/go-shm v1.0.0 h1:HJEel9D1F9YhULvClEHJLawoRSj/1u/EDV7MJbBPgQo=
 github.com/kovidgoyal/go-shm v1.0.0/go.mod h1:Yzb80Xf9L3kaoB2RGok9hHwMIt7Oif61kT6t3+VnZds=
-github.com/kovidgoyal/imaging v1.8.22 h1:CtpoRXQpS79xxJsKu8+LUJJE/0i4FLquJZy0QH+QNlM=
-github.com/kovidgoyal/imaging v1.8.22/go.mod h1:y8wo4JTv4D+skbtQf6fHg8nA1qtagvCcn8J2Nu5k2Jg=
+github.com/kovidgoyal/imaging v1.8.23 h1:4WsboyQ/E8tic2kX49P93Rvscg33SPsCwTBG5EZZF54=
+github.com/kovidgoyal/imaging v1.8.23/go.mod h1:k3Iot3H0v2rSWXIxQISfT3e9wIryqzAHLHCuhG7z9lM=
 github.com/kr/fs v0.1.0/go.mod h1:FFnZGqtBN9Gxj7eW1uZ42v5BccTP0vu6NEaFoC2HwRg=
 github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFBFZlji/RkVcI2GknAs/DXo4wKdlNEc=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
@@ -1063,8 +1063,8 @@ github.com/riandyrn/otelchi v0.12.3 h1:KW9gA+97d6mExk8vbh0FRwb2biUvpyYlc8YuxP1Oa
 github.com/riandyrn/otelchi v0.12.3/go.mod h1:weZZeUJURvtCcbWsdb7Y6F8KFZGedJlSrgUjq9VirV8=
 github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6SoW27p1b0cqNHllgS5HIMJraePCO15w5zCzIWYg=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
-github.com/rogpeppe/go-internal v1.15.0 h1:D0RCU5rMAp+SpgkiNdrjfJ+LX4J1M32V2NeCY7EJ6hc=
-github.com/rogpeppe/go-internal v1.15.0/go.mod h1:DrUVZyrJU+txYW5/1kwtXQSMFio52ZOxX7yM1VHvnxs=
+github.com/rogpeppe/go-internal v1.16.0 h1:O9DK+vNMDVGLr2BeZqmpLeMjiMNkuXfcqntWbZV6S5g=
+github.com/rogpeppe/go-internal v1.16.0/go.mod h1:DrUVZyrJU+txYW5/1kwtXQSMFio52ZOxX7yM1VHvnxs=
 github.com/rs/cors v1.11.1 h1:eU3gRzXLRK57F5rKMGMZURNdIG4EoAmX8k94r9wXWHA=
 github.com/rs/cors v1.11.1/go.mod h1:XyqrcTp5zjWr1wsJ8PIRZssZ8b/WMcMf71DJnit4EMU=
 github.com/rs/xid v1.6.0 h1:fV591PaemRlL6JfRxGDEPl69wICngIQ3shQtzfy2gxU=
