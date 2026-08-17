@@ -158,6 +158,7 @@ func DefaultConfig() *config.Config {
 		Groupware: config.Groupware{
 			Enabled: false,
 		},
+		ConfigurableNotifications: true,
 	}
 }
 
