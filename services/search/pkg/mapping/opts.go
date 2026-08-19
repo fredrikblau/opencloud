@@ -38,4 +38,3 @@ type FieldOpts struct {
 }
 
 func (o FieldOpts) caseInsensitive() bool { return o.CaseInsensitive != nil && *o.CaseInsensitive }
-
