@@ -40,7 +40,6 @@ type Config struct {
 	MaxConcurrency           int         `yaml:"max_concurrency" env:"OC_MAX_CONCURRENCY;FRONTEND_MAX_CONCURRENCY" desc:"Maximum number of concurrent go-routines. Higher values can potentially get work done faster but will also cause more load on the system. Values of 0 or below will be ignored and the default value will be used." introductionVersion:"1.0.0" deprecationVersion:"1.0.0" removalVersion:"%%NEXT_PRODUCTION_VERSION%%" deprecationInfo:"FRONTEND_MAX_CONCURRENCY is deprecated and will be removed in a future version. Please use SHARING_MAX_CONCURRENCY (sharing service) instead." deprecationReplacement:"SHARING_MAX_CONCURRENCY"`
 	AppHandler               AppHandler  `yaml:"app_handler"`
 	Archiver                 Archiver    `yaml:"archiver"`
-	DataGateway              DataGateway `yaml:"data_gateway"`
 	OCS                      OCS         `yaml:"ocs"`
 	OCDav                    OCDav       `yaml:"ocdav"`
 	Checksums                Checksums   `yaml:"checksums"`
