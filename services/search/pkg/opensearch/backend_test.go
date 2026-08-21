@@ -11,6 +11,8 @@ import (
 	opensearchgo "github.com/opensearch-project/opensearch-go/v4"
 	opensearchgoAPI "github.com/opensearch-project/opensearch-go/v4/opensearchapi"
 
+	"github.com/opencloud-eu/reva/v2/pkg/errtypes"
+
 	searchService "github.com/opencloud-eu/opencloud/protogen/gen/opencloud/services/search/v0"
 	"github.com/opencloud-eu/opencloud/services/search/pkg/opensearch"
 	opensearchtest "github.com/opencloud-eu/opencloud/services/search/pkg/opensearch/internal/test"
@@ -397,6 +399,64 @@ var _ = Describe("Backend", func() {
 		})
 	})
 
+	Describe("Hidden", func() {
+		const indexName = "opencloud-test-engine-hidden"
+
+		DescribeTable("keeps the flag in step with the path",
+			func(from, target string, hidden bool) {
+				folder := opensearchtest.Testdata.Resources.Folder
+				folder.ID = "1$1!30"
+				folder.Name = "parent"
+				folder.Path = from
+				folder.Hidden = search.IsHidden(from)
+
+				child := opensearchtest.Testdata.Resources.File
+				child.ID = "1$1!31"
+				child.Name = "child.txt"
+				child.Path = from + "/child.txt"
+				child.ParentID = folder.ID
+				child.Hidden = folder.Hidden
+
+				backend, tc := newBackend(indexName, folder, child)
+				deleteIndexOnCleanup(tc, indexName)
+				tc.Require.IndicesRefresh([]string{indexName}, nil)
+
+				Expect(backend.Move(folder.ID, folder.ParentID, target)).To(Succeed())
+				tc.Require.IndicesRefresh([]string{indexName}, nil)
+
+				for _, id := range []string{folder.ID, child.ID} {
+					Expect(resourceByID(tc, indexName, id).Hidden).
+						To(Equal(hidden), "%s after moving from %s to %s", id, from, target)
+				}
+			},
+			Entry("into a dot folder", "./parent", "./.trash/parent", true),
+			Entry("into a plain folder", "./parent", "./archive/parent", false),
+			Entry("renamed with a leading dot", "./parent", "./.parent", true),
+			Entry("out of a dot folder", "./.trash/parent", "./archive/parent", false),
+			Entry("renamed without the leading dot", "./.parent", "./parent", false),
+			Entry("within the same dot folder", "./.trash/parent", "./.trash/moved", true),
+		)
+
+		It("carries the flag through the trash and back", func() {
+			hidden := opensearchtest.Testdata.Resources.File
+			hidden.ID = "1$1!32"
+			hidden.Path = "./.secret/file.txt"
+			hidden.Hidden = true
+
+			backend, tc := newBackend(indexName, hidden)
+			deleteIndexOnCleanup(tc, indexName)
+			tc.Require.IndicesRefresh([]string{indexName}, nil)
+
+			Expect(backend.Delete(hidden.ID)).To(Succeed())
+			tc.Require.IndicesRefresh([]string{indexName}, nil)
+			Expect(resourceByID(tc, indexName, hidden.ID).Hidden).To(BeTrue(), "after trashing")
+
+			Expect(backend.Restore(hidden.ID)).To(Succeed())
+			tc.Require.IndicesRefresh([]string{indexName}, nil)
+			Expect(resourceByID(tc, indexName, hidden.ID).Hidden).To(BeTrue(), "after restoring")
+		})
+	})
+
 	Describe("DocCount", func() {
 		const indexName = "opencloud-test-engine-doc-count"
 
@@ -488,6 +548,124 @@ var _ = Describe("Backend", func() {
 
 			Expect(resourceByID(tc, indexName, target.ID).Path).To(Equal("./new/path/to/resource"), "target resource should be moved")
 			Expect(resourceByID(tc, indexName, other.ID).Path).To(Equal(other.Path), "resource in a different root must not be moved")
+		})
+	})
+
+	Describe("SearchInAnalyzedFields", func() {
+		const indexName = "opencloud-test-engine-search-analyzed-fields"
+
+		var (
+			tc      *opensearchtest.TestClient
+			backend *opensearch.Backend
+		)
+
+		BeforeEach(func() {
+			dashed := opensearchtest.Testdata.Resources.Folder
+			dashed.ID = "1$1!10"
+			dashed.Name = "new-folder"
+			dashed.Path = "./new-folder"
+			dashed.Title = "quarterly report"
+
+			plain := opensearchtest.Testdata.Resources.Folder
+			plain.ID = "1$1!11"
+			plain.Name = "documents"
+			plain.Path = "./documents"
+			plain.Title = "notes"
+
+			spaced := opensearchtest.Testdata.Resources.Folder
+			spaced.ID = "1$1!12"
+			spaced.Name = "foo bar"
+			spaced.Path = "./foo bar"
+			spaced.Title = "spaced out"
+
+			backend, tc = newBackend(indexName, dashed, plain, spaced)
+			deleteIndexOnCleanup(tc, indexName)
+			tc.Require.IndicesRefresh([]string{indexName}, nil)
+		})
+
+		DescribeTable("finds what the analyzer made of the value",
+			func(query string, want []string) {
+				resp, err := backend.Search(context.Background(), &searchService.SearchIndexRequest{Query: query})
+				Expect(err).ToNot(HaveOccurred())
+
+				names := make([]string, 0, len(resp.Matches))
+				for _, match := range resp.Matches {
+					names = append(names, match.Entity.Name)
+				}
+				Expect(names).To(ConsistOf(want))
+			},
+			Entry("the full name with the dash", "new-folder", []string{"new-folder"}),
+			Entry("one token of it", "new", []string{"new-folder"}),
+			Entry("a name without a dash", "documents", []string{"documents"}),
+			Entry("a wildcard", "*folder*", []string{"new-folder"}),
+			// the shape the web client sends for every name search
+			Entry("a wildcard around the whole dashed name", `name:"*new-folder*"`, []string{"new-folder"}),
+			Entry("a wildcard spanning the dash", `name:"*w-fol*"`, []string{"new-folder"}),
+			Entry("a wildcard in a different case", `name:"*NEW-FOLDER*"`, []string{"new-folder"}),
+			Entry("a wildcard spanning a space", `name:"*oo ba*"`, []string{"foo bar"}),
+			Entry("a wildcard around a name with a space", `name:"*foo bar*"`, []string{"foo bar"}),
+			Entry("a name with a space", `name:"foo bar"`, []string{"foo bar"}),
+			Entry("a title of two words", `Title:"quarterly report"`, []string{"new-folder"}),
+			Entry("one token of a title", "Title:quarterly", []string{"new-folder"}),
+		)
+	})
+
+	Describe("SearchByTag", func() {
+		const indexName = "opencloud-test-engine-search-by-tag"
+
+		var (
+			tc      *opensearchtest.TestClient
+			backend *opensearch.Backend
+		)
+
+		BeforeEach(func() {
+			tagged := opensearchtest.Testdata.Resources.Folder
+			tagged.ID = "1$1!20"
+			tagged.Name = "tagged"
+			tagged.Path = "./tagged"
+			tagged.Tags = []string{"foo-bar"}
+
+			other := opensearchtest.Testdata.Resources.Folder
+			other.ID = "1$1!21"
+			other.Name = "other"
+			other.Path = "./other"
+			other.Tags = []string{"foo"}
+
+			backend, tc = newBackend(indexName, tagged, other)
+			deleteIndexOnCleanup(tc, indexName)
+			tc.Require.IndicesRefresh([]string{indexName}, nil)
+		})
+
+		// a tag is one label, not prose, so it matches as a whole or not at all
+		DescribeTable("matches a tag as a whole",
+			func(query string, want []string) {
+				resp, err := backend.Search(context.Background(), &searchService.SearchIndexRequest{Query: query})
+				Expect(err).ToNot(HaveOccurred())
+
+				names := make([]string, 0, len(resp.Matches))
+				for _, match := range resp.Matches {
+					names = append(names, match.Entity.Name)
+				}
+				Expect(names).To(ConsistOf(want))
+			},
+			Entry("the whole tag", `tag:("foo-bar")`, []string{"tagged"}),
+			Entry("a token of a tag does not match it", `tag:("foo")`, []string{"other"}),
+			Entry("a tag in a different case", `tag:("FOO-BAR")`, []string{"tagged"}),
+			Entry("a wildcard reaches both", `tag:("*foo*")`, []string{"tagged", "other"}),
+		)
+	})
+
+	Describe("SearchWithAnInvalidQuery", func() {
+		const indexName = "opencloud-test-engine-search-invalid-query"
+
+		It("answers with a bad request", func() {
+			backend, tc := newBackend(indexName)
+			deleteIndexOnCleanup(tc, indexName)
+
+			_, err := backend.Search(context.Background(), &searchService.SearchIndexRequest{Query: "AND mediatype:document"})
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(BeAssignableToTypeOf(errtypes.BadRequest("")))
+			Expect(err.Error()).To(Equal(`error: bad request: the expression can't begin from a binary operator: 'AND'`))
 		})
 	})
 })
